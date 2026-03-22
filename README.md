@@ -1,6 +1,6 @@
 # git-stage
 
-*All the world's a stage, and the git contributors --merely --players*
+*All the world's a stage, and all the git contributors*
 
 An interactive terminal tool for staging files and committing with Git.
 
