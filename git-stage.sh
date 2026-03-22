@@ -78,7 +78,8 @@ mapfile -t STATUS_LINES < <(git status --porcelain -u)
 if [[ ${#STATUS_LINES[@]} -eq 0 ]]; then
   echo "$(green '✓') Nothing to stage — working tree is clean."
   prev_msg=$(git log -1 --pretty=format:'%s' 2>/dev/null || true)
-  [[ -n "$prev_msg" ]] && echo "$(dim "previous commit: $prev_msg")"
+  prev_meta=$(git log -1 --pretty=format:'%an, %ad, %h' --date=format:'%a %b %d %H:%M:%S' 2>/dev/null || true)
+  [[ -n "$prev_msg" ]] && echo "$(dim "previous commit: $prev_msg [$prev_meta]")"
   exit 0
 fi
 
@@ -208,12 +209,17 @@ draw() {
 
   local out=""
 
-  local branch last_commit
+  local branch last_commit last_meta
   branch=$(git branch --show-current 2>/dev/null || echo 'detached HEAD')
   last_commit=$(git log -1 --pretty=format:'%s' 2>/dev/null || echo 'no commits yet')
+  last_meta=$(git log -1 --pretty=format:'%an, %ad, %h' --date=format:'%a %b %d %H:%M:%S' 2>/dev/null || echo '')
 
   out+="$(bold ' git-stage')  $(dim "— $branch · $N file(s) changed, $sel_count selected")"$'\n'
-  out+="$(dim " previous commit: $last_commit")"$'\n'
+  if [[ -n "$last_meta" ]]; then
+    out+="$(dim " previous commit: $last_commit [$last_meta]")"$'\n'
+  else
+    out+="$(dim " previous commit: $last_commit")"$'\n'
+  fi
   [[ "$QUIET" == "0" ]] && out+="$(dim ' Copyright (c) 2026 Scott Bellware')"$'\n'
   out+="$(dim ' ↑↓ navigate   Space toggle   d diff   x remove   u revert   m amend   a all   Enter confirm   q quit')"$'\n'
   out+="$(dim ' ────────────────────────────────────────────────────────────')"$'\n'
@@ -459,7 +465,8 @@ done
 
 if [[ ${#NOW_STAGED[@]} -eq 0 ]]; then
   prev_msg=$(git log -1 --pretty=format:'%s' 2>/dev/null || true)
-  [[ -n "$prev_msg" ]] && echo "$(dim "previous commit: $prev_msg")"
+  prev_meta=$(git log -1 --pretty=format:'%an, %ad, %h' --date=format:'%a %b %d %H:%M:%S' 2>/dev/null || true)
+  [[ -n "$prev_msg" ]] && echo "$(dim "previous commit: $prev_msg [$prev_meta]")"
   echo "$(yellow 'Nothing staged — aborting commit.')"
   exit 0
 fi
@@ -467,7 +474,8 @@ fi
 if [[ ${#TO_STAGE[@]} -eq 0 && $(( ${#UNSTAGE_NEW[@]} + ${#UNSTAGE_TRACKED[@]} )) -eq 0 ]]; then
   echo "$(dim 'Staging unchanged.')"
   prev_msg=$(git log -1 --pretty=format:'%s' 2>/dev/null || true)
-  [[ -n "$prev_msg" ]] && echo "$(dim "previous commit: $prev_msg")"
+  prev_meta=$(git log -1 --pretty=format:'%an, %ad, %h' --date=format:'%a %b %d %H:%M:%S' 2>/dev/null || true)
+  [[ -n "$prev_msg" ]] && echo "$(dim "previous commit: $prev_msg [$prev_meta]")"
   echo
 fi
 
