@@ -76,7 +76,10 @@ fi
 mapfile -t STATUS_LINES < <(git status --porcelain -u)
 
 if [[ ${#STATUS_LINES[@]} -eq 0 ]]; then
-  echo "$(green '✓') Nothing to stage — working tree is clean."; exit 0
+  echo "$(green '✓') Nothing to stage — working tree is clean."
+  prev_msg=$(git log -1 --pretty=format:'%s' 2>/dev/null || true)
+  [[ -n "$prev_msg" ]] && echo "$(dim "previous commit: $prev_msg")"
+  exit 0
 fi
 
 # Parallel arrays
