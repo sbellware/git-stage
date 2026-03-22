@@ -1,5 +1,7 @@
 # git-stage
 
+![git-stage screenshot](screenshot.png)
+
 *All the world's a stage, and all the git contributors*
 
 An interactive terminal tool for staging files and committing with Git.
