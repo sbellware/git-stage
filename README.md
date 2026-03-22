@@ -123,3 +123,5 @@ Short forms `-h` and `-v` are also supported for `--help` and `--version`.
 ## License
 
 Copyright (c) 2026 Scott Bellware. All rights reserved.
+
+See [LICENSE](LICENSE) for full terms.
