@@ -39,7 +39,7 @@ case "${1:-}" in
     echo "Copyright (c) 2026 Scott Bellware"
     exit 0 ;;
   --help|-h)
-    echo "Usage: git-stage"
+    echo "Usage: git-stage [options]"
     echo ""
     echo "Interactively select changed files to stage and commit."
     echo ""
@@ -49,17 +49,21 @@ case "${1:-}" in
     echo "  d                Show diff of file under cursor"
     echo "  x                Remove untracked file under cursor (with confirmation)"
     echo "  u                Revert unstaged changes to file under cursor (with confirmation)"
+    echo "  m                Amend the last commit (stages selected files, edits message)"
     echo "  a                Select / deselect all"
     echo "  Enter            Confirm — stage selected, unstage deselected, then commit"
     echo "  q / Ctrl-C       Quit (index left exactly as-is)"
     echo ""
     echo "Options:"
     echo "  -q               Suppress copyright display"
+    echo "  --dry-run        Show what would be staged/committed without doing it"
     echo ""
     echo "Copyright (c) 2026 Scott Bellware"
     exit 0 ;;
-  -q) QUIET=1 ;;
-  '') QUIET=0 ;;
+  --dry-run) QUIET=0; DRY_RUN=1 ;;
+  --dry-run\ -q|-q\ --dry-run) QUIET=1; DRY_RUN=1 ;;
+  -q) QUIET=1; DRY_RUN=0 ;;
+  '') QUIET=0; DRY_RUN=0 ;;
   *)
     echo "Unknown option: ${1}" >&2
     echo "Try 'git-stage --help' for usage." >&2
@@ -214,7 +218,9 @@ draw() {
   last_commit=$(git log -1 --pretty=format:'%s' 2>/dev/null || echo 'no commits yet')
   last_meta=$(git log -1 --pretty=format:'%an, %ad, %h' --date=format:'%a %b %d %H:%M:%S' 2>/dev/null || echo '')
 
-  out+="$(bold ' git-stage')  $(dim "— $branch · $N file(s) changed, $sel_count selected")"$'\n'
+  out+="$(bold ' git-stage')  $(dim "— $branch · $N file(s) changed, $sel_count selected")"
+  [[ "$DRY_RUN" == "1" ]] && out+="  $(yellow '[dry run]')"
+  out+=$'\n'
   if [[ -n "$last_meta" ]]; then
     out+="$(dim " previous commit: $last_commit [$last_meta]")"$'\n'
   else
@@ -444,16 +450,18 @@ done
 
 if [[ $(( ${#UNSTAGE_NEW[@]} + ${#UNSTAGE_TRACKED[@]} )) -gt 0 ]]; then
   echo "$(bold 'Unstaging:')"
-  for f in "${UNSTAGE_NEW[@]}"     "${UNSTAGE_TRACKED[@]}"; do echo "  $(red '−') $f"; done
-  [[ ${#UNSTAGE_NEW[@]}     -gt 0 ]] && git rm --cached -q -- "${UNSTAGE_NEW[@]}"
-  [[ ${#UNSTAGE_TRACKED[@]} -gt 0 ]] && git restore --staged -- "${UNSTAGE_TRACKED[@]}"
+  for f in "${UNSTAGE_NEW[@]}" "${UNSTAGE_TRACKED[@]}"; do echo "  $(red '−') $f"; done
+  if [[ "$DRY_RUN" == "0" ]]; then
+    [[ ${#UNSTAGE_NEW[@]}     -gt 0 ]] && git rm --cached -q -- "${UNSTAGE_NEW[@]}"
+    [[ ${#UNSTAGE_TRACKED[@]} -gt 0 ]] && git restore --staged -- "${UNSTAGE_TRACKED[@]}"
+  fi
   echo
 fi
 
 if [[ ${#TO_STAGE[@]} -gt 0 ]]; then
   echo "$(bold 'Staging:')"
   for f in "${TO_STAGE[@]}"; do echo "  $(green '+') $f"; done
-  git add -- "${TO_STAGE[@]}"
+  [[ "$DRY_RUN" == "0" ]] && git add -- "${TO_STAGE[@]}"
   echo
 fi
 
@@ -494,7 +502,9 @@ fi
 
 # ── Commit ────────────────────────────────────────────────────────────────────
 echo
-if git commit -m "$commit_msg"; then
+if [[ "$DRY_RUN" == "1" ]]; then
+  echo "$(yellow '[dry run] would commit:') $commit_msg"
+elif git commit -m "$commit_msg"; then
   echo
   echo "$(green '✓') Committed successfully."
 else
