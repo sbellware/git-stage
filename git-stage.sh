@@ -176,10 +176,12 @@ draw() {
 
   local out=""
 
-  local branch
+  local branch last_commit
   branch=$(git branch --show-current 2>/dev/null || echo 'detached HEAD')
+  last_commit=$(git log -1 --pretty=format:'%s' 2>/dev/null || echo 'no commits yet')
 
   out+="$(bold ' git-stage')  $(dim "— $branch · $N file(s) changed, $sel_count selected")"$'\n'
+  out+="$(dim " previous commit: $last_commit")"$'\n'
   [[ "$QUIET" == "0" ]] && out+="$(dim ' Copyright (c) 2026 Scott Bellware')"$'\n'
   out+="$(dim ' ↑↓ navigate   Space toggle   d diff   x remove   u revert   a all   Enter confirm   q quit')"$'\n'
   out+="$(dim ' ────────────────────────────────────────────────────────────')"$'\n'
