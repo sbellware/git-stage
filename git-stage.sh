@@ -268,7 +268,7 @@ draw() {
   last_commit=$(git log -1 --pretty=format:'%s' 2>/dev/null || echo 'no commits yet')
   last_meta=$(git log -1 --pretty=format:'%an, %ad, %h' --date=format:'%a %b %d %H:%M:%S' 2>/dev/null || echo '')
 
-  out+="$(bold ' git-stage')  $(dim "— $branch · $N file(s) changed, $sel_count selected")"
+  out+="$(bold ' git-stage')  $(dim "— $N file(s) changed, $sel_count selected")"
   [[ "$DRY_RUN" == "1" ]] && out+="  $(yellow '[dry run]')"
   out+=$'\n'
   if [[ -n "$last_meta" ]]; then
@@ -276,6 +276,7 @@ draw() {
   else
     out+="$(dim " previous commit: $last_commit")"$'\n'
   fi
+  out+="$(dim " branch: $branch")"$'\n'
   [[ "$QUIET" == "0" ]] && out+="$(dim ' Copyright (c) 2026 Scott Bellware')"$'\n'
   out+="$(dim ' ↑↓ navigate   Space toggle   d diff   x remove   u revert   m amend   a all   Enter confirm   q quit')"$'\n'
   out+="$(dim ' ────────────────────────────────────────────────────────────')"$'\n'
