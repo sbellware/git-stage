@@ -445,7 +445,16 @@ while true; do
       [[ ${#_UNSTAGE_TRACKED[@]} -gt 0 ]] && git restore --staged -- "${_UNSTAGE_TRACKED[@]}"
       [[ ${#_TO_STAGE[@]}        -gt 0 ]] && git add -- "${_TO_STAGE[@]}"
 
-      # Pre-fill previous commit message
+      # Show what's going into the amended commit
+      local _all_staged=()
+      for (( i=0; i<N; i++ )); do
+        [[ "${SEL[$i]}" == "1" ]] && _all_staged+=("${PATHS[$i]}")
+      done
+      if [[ ${#_all_staged[@]} -gt 0 ]]; then
+        echo "$(bold 'Files in amended commit:')"
+        for f in "${_all_staged[@]}"; do echo "  $(green '+') $f"; done
+        echo
+      fi
       prev_msg=$(git log -1 --pretty=format:'%B' 2>/dev/null || echo '')
       printf "$(bold 'Amend commit message') $(dim '(blank to abort):')\n  › "
       # Print the previous message so the user can see it, then read a new one
