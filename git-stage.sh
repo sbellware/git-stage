@@ -461,6 +461,8 @@ fi
 
 if [[ ${#TO_STAGE[@]} -eq 0 && $(( ${#UNSTAGE_NEW[@]} + ${#UNSTAGE_TRACKED[@]} )) -eq 0 ]]; then
   echo "$(dim 'Staging unchanged.')"
+  prev_msg=$(git log -1 --pretty=format:'%s' 2>/dev/null || true)
+  [[ -n "$prev_msg" ]] && echo "$(dim "previous commit: $prev_msg")"
   echo
 fi
 
