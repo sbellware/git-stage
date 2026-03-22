@@ -136,11 +136,11 @@ if [[ ${#STATUS_LINES[@]} -eq 0 ]]; then
             show_cursor
             tput clear
             echo "$(bold 'Pushing to origin...')"
-            if git push origin "$branch"; then
+            if git push --set-upstream origin "$branch"; then
               echo "$(green '✓') Pushed successfully."
               echo
               echo "$(dim "Commands run:")"
-              echo "$(dim "  git push origin $branch")"
+              echo "$(dim "  git push --set-upstream origin $branch")"
             else
               echo "$(red 'Push failed.')"
             fi
@@ -607,8 +607,8 @@ elif git commit -m "$commit_msg"; then
         show_cursor
         tput clear
         echo "$(bold 'Pushing to origin...')"
-        if git push origin "$branch"; then
-          CMDS+=("git push origin $branch")
+        if git push --set-upstream origin "$branch"; then
+          CMDS+=("git push --set-upstream origin $branch")
           echo "$(green '✓') Pushed successfully."
         else
           echo "$(red 'Push failed.')"
