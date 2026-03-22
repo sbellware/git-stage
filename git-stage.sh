@@ -455,6 +455,8 @@ for (( i=0; i<N; i++ )); do
 done
 
 if [[ ${#NOW_STAGED[@]} -eq 0 ]]; then
+  prev_msg=$(git log -1 --pretty=format:'%s' 2>/dev/null || true)
+  [[ -n "$prev_msg" ]] && echo "$(dim "previous commit: $prev_msg")"
   echo "$(yellow 'Nothing staged — aborting commit.')"
   exit 0
 fi
