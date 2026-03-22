@@ -10,7 +10,7 @@
 #   a                Select / deselect all
 #   x                Remove untracked file under cursor (with confirmation)
 #   u                Revert unstaged changes to file under cursor (with confirmation)
-#   q / Ctrl-C       Quit (index left exactly as-is)
+#   m                Amend the last commit (stages selected files, edits message)
 #
 # Options:
 #   -q               Suppress copyright display
@@ -212,7 +212,7 @@ draw() {
   out+="$(bold ' git-stage')  $(dim "— $branch · $N file(s) changed, $sel_count selected")"$'\n'
   out+="$(dim " previous commit: $last_commit")"$'\n'
   [[ "$QUIET" == "0" ]] && out+="$(dim ' Copyright (c) 2026 Scott Bellware')"$'\n'
-  out+="$(dim ' ↑↓ navigate   Space toggle   d diff   x remove   u revert   a all   Enter confirm   q quit')"$'\n'
+  out+="$(dim ' ↑↓ navigate   Space toggle   d diff   x remove   u revert   m amend   a all   Enter confirm   q quit')"$'\n'
   out+="$(dim ' ────────────────────────────────────────────────────────────')"$'\n'
 
   local i
@@ -358,6 +358,52 @@ while true; do
         hide_cursor
       fi
       ;;
+    m|M)
+      # Amend the last commit — stage selected files then amend with editable message
+      clear_drawn
+      stty "$OLD_STTY"
+      show_cursor
+
+      # Apply any staging changes first
+      declare -a _TO_STAGE=() _UNSTAGE_NEW=() _UNSTAGE_TRACKED=()
+      for (( i=0; i<N; i++ )); do
+        if [[ "${SEL[$i]}" == "1" && "${WAS_STAGED[$i]}" == "0" ]]; then
+          _TO_STAGE+=("${PATHS[$i]}")
+        elif [[ "${SEL[$i]}" == "0" && "${WAS_STAGED[$i]}" == "1" ]]; then
+          if [[ "${XY[$i]:0:1}" == "A" ]]; then _UNSTAGE_NEW+=("${PATHS[$i]}")
+          else _UNSTAGE_TRACKED+=("${PATHS[$i]}"); fi
+        fi
+      done
+      [[ ${#_UNSTAGE_NEW[@]}     -gt 0 ]] && git rm --cached -q -- "${_UNSTAGE_NEW[@]}"
+      [[ ${#_UNSTAGE_TRACKED[@]} -gt 0 ]] && git restore --staged -- "${_UNSTAGE_TRACKED[@]}"
+      [[ ${#_TO_STAGE[@]}        -gt 0 ]] && git add -- "${_TO_STAGE[@]}"
+
+      # Pre-fill previous commit message
+      prev_msg=$(git log -1 --pretty=format:'%B' 2>/dev/null || echo '')
+      printf "$(bold 'Amend commit message') $(dim '(blank to abort):')\n  › "
+      # Print the previous message so the user can see it, then read a new one
+      printf '%s' "$prev_msg"
+      echo
+      printf "  › "
+      IFS= read -r commit_msg
+      [[ -z "$commit_msg" ]] && commit_msg="$prev_msg"
+
+      if [[ -z "$commit_msg" ]]; then
+        echo "$(yellow 'No message — amend aborted.')"
+        exit 0
+      fi
+
+      echo
+      if git commit --amend -m "$commit_msg"; then
+        echo
+        echo "$(green '✓') Amended successfully."
+      else
+        echo
+        echo "$(red 'Amend failed.')"
+        exit 1
+      fi
+      exit 0
+      ;;
     q|Q|$'\x1b'|$'\x03')
       clear_drawn
       echo "$(dim 'Quit — index left unchanged.')"
@@ -420,6 +466,7 @@ fi
 
 # ── Restore terminal before text input ───────────────────────────────────────
 stty "$OLD_STTY"
+show_cursor
 
 # ── Commit message ────────────────────────────────────────────────────────────
 printf "$(bold 'Commit message') $(dim '(blank to abort):')\n  › "
