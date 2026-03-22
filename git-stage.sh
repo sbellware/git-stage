@@ -87,11 +87,11 @@ clear_drawn()  {
   tput ed  2>/dev/null || true
 }
 
-OLD_STTY=$(stty -g)
+OLD_STTY=$(stty -g </dev/tty)
 
 restore() {
   show_cursor
-  stty "$OLD_STTY" 2>/dev/null || true
+  stty "$OLD_STTY" </dev/tty 2>/dev/null || true
 }
 trap 'restore; echo' EXIT
 trap 'restore; echo; echo "$(dim Interrupted.)"; exit 130' INT
@@ -112,7 +112,7 @@ if [[ ${#STATUS_LINES[@]} -eq 0 ]]; then
       cur_commit=$(git log -1 --pretty=format:'%s' 2>/dev/null || true)
       cur_meta=$(git log -1 --pretty=format:'%an, %ad, %h' --date=format:'%a %b %d %H:%M:%S' 2>/dev/null || true)
 
-      stty -echo -icanon min 1 time 0
+      stty -echo -icanon min 1 time 0 </dev/tty
       hide_cursor
       tput clear
 
@@ -124,15 +124,15 @@ if [[ ${#STATUS_LINES[@]} -eq 0 ]]; then
 
       while true; do
         key=""
-        IFS= read -r -s -n1 key || true
+        IFS= read -r -s -n1 key </dev/tty || true
         if [[ "$key" == $'\x1b' ]]; then
           seq=""
-          IFS= read -r -s -n2 -t 0.1 seq || true
+          IFS= read -r -s -n2 -t 0.1 seq </dev/tty || true
           key="${key}${seq}"
         fi
         case "$key" in
           p|P)
-            stty "$OLD_STTY"
+            stty "$OLD_STTY" </dev/tty
             show_cursor
             tput clear
             echo "$(bold 'Pushing to origin...')"
@@ -146,7 +146,7 @@ if [[ ${#STATUS_LINES[@]} -eq 0 ]]; then
             fi
             break ;;
           q|Q|$'\x03'|$'\x1b')
-            stty "$OLD_STTY"
+            stty "$OLD_STTY" </dev/tty
             show_cursor
             tput clear
             break ;;
@@ -318,17 +318,17 @@ draw() {
 }
 
 # ── Event loop ────────────────────────────────────────────────────────────────
-stty -echo -icanon min 1 time 0
+stty -echo -icanon min 1 time 0 </dev/tty
 hide_cursor
 while true; do
   draw
 
   # Read directly in the main shell (no subshell) so stty raw mode is inherited
   key=""
-  IFS= read -r -s -n1 key || true
+  IFS= read -r -s -n1 key </dev/tty || true
   if [[ "$key" == $'\x1b' ]]; then
     seq=""
-    IFS= read -r -s -n2 -t 0.1 seq || true
+    IFS= read -r -s -n2 -t 0.1 seq </dev/tty || true
     key="${key}${seq}"
   fi
 
@@ -353,7 +353,7 @@ while true; do
       ;;
     d|D)
       # Show diff for the file under the cursor, then restore raw mode
-      stty "$OLD_STTY"
+      stty "$OLD_STTY" </dev/tty
       show_cursor
       path="${PATHS[$cursor]}"
       xy="${XY[$cursor]}"
@@ -367,18 +367,18 @@ while true; do
         git diff --color=always --word-diff --unified=5 -- "$path" | less -R
       fi
       tput clear
-      stty -echo -icanon min 1 time 0
+      stty -echo -icanon min 1 time 0 </dev/tty
       hide_cursor
       ;;
     x|X)
       if [[ "${XY[$cursor]}" == "??" ]]; then
         path="${PATHS[$cursor]}"
         # Temporarily restore terminal for the confirmation prompt
-        stty "$OLD_STTY"
+        stty "$OLD_STTY" </dev/tty
         show_cursor
         clear_drawn
         printf "Remove $(red "$path")? [y/N] "
-        IFS= read -r confirm
+        IFS= read -r confirm </dev/tty
         if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
           rm -rf -- "$path"
           # Remove from arrays
@@ -393,7 +393,7 @@ while true; do
             exit 0
           fi
         fi
-        stty -echo -icanon min 1 time 0
+        stty -echo -icanon min 1 time 0 </dev/tty
         hide_cursor
       fi
       ;;
@@ -402,11 +402,11 @@ while true; do
       # Only revert if the file has unstaged changes (index column is space, worktree column is M or D)
       if [[ "${xy:0:1}" == " " && "${xy:1:1}" =~ ^[MD]$ ]]; then
         path="${PATHS[$cursor]}"
-        stty "$OLD_STTY"
+        stty "$OLD_STTY" </dev/tty
         show_cursor
         clear_drawn
         printf "Revert $(yellow "$path")? This cannot be undone. [y/N] "
-        IFS= read -r confirm
+        IFS= read -r confirm </dev/tty
         if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
           git restore -- "$path"
           # Remove from arrays
@@ -421,14 +421,14 @@ while true; do
             exit 0
           fi
         fi
-        stty -echo -icanon min 1 time 0
+        stty -echo -icanon min 1 time 0 </dev/tty
         hide_cursor
       fi
       ;;
     m|M)
       # Amend the last commit — stage selected files then amend with editable message
       clear_drawn
-      stty "$OLD_STTY"
+      stty "$OLD_STTY" </dev/tty
       show_cursor
 
       # Apply any staging changes first
@@ -452,7 +452,7 @@ while true; do
       printf '%s' "$prev_msg"
       echo
       printf "  › "
-      IFS= read -r commit_msg
+      IFS= read -r commit_msg </dev/tty
       [[ -z "$commit_msg" ]] && commit_msg="$prev_msg"
 
       if [[ -z "$commit_msg" ]]; then
@@ -481,6 +481,10 @@ while true; do
       ;;
   esac
 done
+
+# Restore terminal immediately after event loop
+stty "$OLD_STTY" </dev/tty
+show_cursor
 
 # ── Apply staging changes ─────────────────────────────────────────────────────
 clear_drawn
@@ -549,13 +553,9 @@ if [[ ${#TO_STAGE[@]} -eq 0 && $(( ${#UNSTAGE_NEW[@]} + ${#UNSTAGE_TRACKED[@]} )
   echo
 fi
 
-# ── Restore terminal before text input ───────────────────────────────────────
-stty "$OLD_STTY"
-show_cursor
-
 # ── Commit message ────────────────────────────────────────────────────────────
 printf "$(bold 'Commit message') $(dim '(blank to abort):')\n  › "
-IFS= read -r commit_msg
+IFS= read -r commit_msg </dev/tty
 
 if [[ -z "$commit_msg" ]]; then
   echo "$(yellow 'No message given — files are staged but not committed.')"
@@ -570,7 +570,7 @@ elif git commit -m "$commit_msg"; then
   CMDS+=("git commit -m \"$commit_msg\"")
 
   # ── Post-commit UI ───────────────────────────────────────────────────────────
-  stty -echo -icanon min 1 time 0
+  stty -echo -icanon min 1 time 0 </dev/tty
   hide_cursor
 
   cur_commit=$(git log -1 --pretty=format:'%s' 2>/dev/null || true)
@@ -586,15 +586,15 @@ elif git commit -m "$commit_msg"; then
 
   while true; do
     key=""
-    IFS= read -r -s -n1 key || true
+    IFS= read -r -s -n1 key </dev/tty || true
     if [[ "$key" == $'\x1b' ]]; then
       seq=""
-      IFS= read -r -s -n2 -t 0.1 seq || true
+      IFS= read -r -s -n2 -t 0.1 seq </dev/tty || true
       key="${key}${seq}"
     fi
     case "$key" in
       p|P)
-        stty "$OLD_STTY"
+        stty "$OLD_STTY" </dev/tty
         show_cursor
         tput clear
         echo "$(bold 'Pushing to origin...')"
@@ -606,7 +606,7 @@ elif git commit -m "$commit_msg"; then
         fi
         break ;;
       q|Q|$'\x03'|$'\x1b')
-        stty "$OLD_STTY"
+        stty "$OLD_STTY" </dev/tty
         show_cursor
         tput clear
         break ;;
