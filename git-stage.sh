@@ -79,6 +79,23 @@ fi
 # ── Collect changed files ───────────────────────────────────────────────────
 mapfile -t STATUS_LINES < <(git status --porcelain -u)
 
+# ── Terminal setup ──────────────────────────────────────────────────────────
+hide_cursor()  { tput civis 2>/dev/null || true; }
+show_cursor()  { tput cnorm 2>/dev/null || true; }
+clear_drawn()  {
+  tput cup 0 0 2>/dev/null || true
+  tput ed  2>/dev/null || true
+}
+
+OLD_STTY=$(stty -g)
+
+restore() {
+  show_cursor
+  stty "$OLD_STTY" 2>/dev/null || true
+}
+trap 'restore; echo' EXIT
+trap 'restore; echo; echo "$(dim Interrupted.)"; exit 130' INT
+
 # ── Check for pending push on clean working tree ─────────────────────────────
 if [[ ${#STATUS_LINES[@]} -eq 0 ]]; then
   echo "$(green '✓') Nothing to stage — working tree is clean."
@@ -189,27 +206,6 @@ for (( i=0; i<N; i++ )); do
   fi
   STATS+=("$stat")
 done
-
-# ── Terminal setup ──────────────────────────────────────────────────────────
-
-hide_cursor()  { tput civis 2>/dev/null || true; }
-show_cursor()  { tput cnorm 2>/dev/null || true; }
-clear_drawn()  {
-  tput cup 0 0 2>/dev/null || true
-  tput ed  2>/dev/null || true
-}
-
-OLD_STTY=$(stty -g)
-
-restore() {
-  show_cursor
-  stty "$OLD_STTY" 2>/dev/null || true
-}
-trap 'restore; echo' EXIT
-trap 'restore; echo; echo "$(dim Interrupted.)"; exit 130' INT
-
-stty -echo -icanon min 1 time 0
-hide_cursor
 
 # ── Status label ────────────────────────────────────────────────────────────
 status_label() {
@@ -322,6 +318,8 @@ draw() {
 }
 
 # ── Event loop ────────────────────────────────────────────────────────────────
+stty -echo -icanon min 1 time 0
+hide_cursor
 while true; do
   draw
 
