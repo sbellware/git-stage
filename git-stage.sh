@@ -434,6 +434,7 @@ done
 clear_drawn
 
 declare -a TO_STAGE=() UNSTAGE_NEW=() UNSTAGE_TRACKED=()
+declare -a CMDS=()   # log of git commands run
 for (( i=0; i<N; i++ )); do
   if [[ "${SEL[$i]}" == "1" && "${WAS_STAGED[$i]}" == "0" ]]; then
     TO_STAGE+=("${PATHS[$i]}")
@@ -452,8 +453,14 @@ if [[ $(( ${#UNSTAGE_NEW[@]} + ${#UNSTAGE_TRACKED[@]} )) -gt 0 ]]; then
   echo "$(bold 'Unstaging:')"
   for f in "${UNSTAGE_NEW[@]}" "${UNSTAGE_TRACKED[@]}"; do echo "  $(red '−') $f"; done
   if [[ "$DRY_RUN" == "0" ]]; then
-    [[ ${#UNSTAGE_NEW[@]}     -gt 0 ]] && git rm --cached -q -- "${UNSTAGE_NEW[@]}"
-    [[ ${#UNSTAGE_TRACKED[@]} -gt 0 ]] && git restore --staged -- "${UNSTAGE_TRACKED[@]}"
+    if [[ ${#UNSTAGE_NEW[@]} -gt 0 ]]; then
+      git rm --cached -q -- "${UNSTAGE_NEW[@]}"
+      CMDS+=("git rm --cached -- ${UNSTAGE_NEW[*]}")
+    fi
+    if [[ ${#UNSTAGE_TRACKED[@]} -gt 0 ]]; then
+      git restore --staged -- "${UNSTAGE_TRACKED[@]}"
+      CMDS+=("git restore --staged -- ${UNSTAGE_TRACKED[*]}")
+    fi
   fi
   echo
 fi
@@ -461,7 +468,10 @@ fi
 if [[ ${#TO_STAGE[@]} -gt 0 ]]; then
   echo "$(bold 'Staging:')"
   for f in "${TO_STAGE[@]}"; do echo "  $(green '+') $f"; done
-  [[ "$DRY_RUN" == "0" ]] && git add -- "${TO_STAGE[@]}"
+  if [[ "$DRY_RUN" == "0" ]]; then
+    git add -- "${TO_STAGE[@]}"
+    CMDS+=("git add -- ${TO_STAGE[*]}")
+  fi
   echo
 fi
 
@@ -505,10 +515,18 @@ echo
 if [[ "$DRY_RUN" == "1" ]]; then
   echo "$(yellow '[dry run] would commit:') $commit_msg"
 elif git commit -m "$commit_msg"; then
+  CMDS+=("git commit -m \"$commit_msg\"")
   echo
   echo "$(green '✓') Committed successfully."
 else
   echo
   echo "$(red 'Commit failed — files remain staged.')"
   exit 1
+fi
+
+# ── Commands run ──────────────────────────────────────────────────────────────
+if [[ ${#CMDS[@]} -gt 0 ]]; then
+  echo
+  echo "$(dim 'Commands run:')"
+  for cmd in "${CMDS[@]}"; do echo "$(dim "  $cmd")"; done
 fi
