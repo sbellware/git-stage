@@ -79,11 +79,65 @@ fi
 # ── Collect changed files ───────────────────────────────────────────────────
 mapfile -t STATUS_LINES < <(git status --porcelain -u)
 
+# ── Check for pending push on clean working tree ─────────────────────────────
 if [[ ${#STATUS_LINES[@]} -eq 0 ]]; then
   echo "$(green '✓') Nothing to stage — working tree is clean."
   prev_msg=$(git log -1 --pretty=format:'%s' 2>/dev/null || true)
   prev_meta=$(git log -1 --pretty=format:'%an, %ad, %h' --date=format:'%a %b %d %H:%M:%S' 2>/dev/null || true)
   [[ -n "$prev_msg" ]] && echo "$(dim "previous commit: $prev_msg [$prev_meta]")"
+
+  # Check for unpushed commits
+  upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)
+  if [[ -n "$upstream" ]]; then
+    unpushed=$(git log '@{u}..HEAD' --oneline 2>/dev/null | wc -l | tr -d ' ')
+    if [[ "$unpushed" -gt 0 ]]; then
+      branch=$(git branch --show-current 2>/dev/null || echo 'detached HEAD')
+      cur_commit=$(git log -1 --pretty=format:'%s' 2>/dev/null || true)
+      cur_meta=$(git log -1 --pretty=format:'%an, %ad, %h' --date=format:'%a %b %d %H:%M:%S' 2>/dev/null || true)
+
+      stty -echo -icanon min 1 time 0
+      hide_cursor
+      tput clear
+
+      printf '%s\n' \
+        "$(bold ' git-stage')  $(dim "— $branch · $unpushed unpushed commit(s)")" \
+        "$(dim " current commit: $cur_commit [$cur_meta]")" \
+        "$(dim ' p push   q quit')" \
+        "$(dim ' ────────────────────────────────────────────────────────────')"
+
+      while true; do
+        key=""
+        IFS= read -r -s -n1 key || true
+        if [[ "$key" == $'\x1b' ]]; then
+          seq=""
+          IFS= read -r -s -n2 -t 0.1 seq || true
+          key="${key}${seq}"
+        fi
+        case "$key" in
+          p|P)
+            stty "$OLD_STTY"
+            show_cursor
+            tput clear
+            echo "$(bold 'Pushing to origin...')"
+            if git push origin "$branch"; then
+              echo "$(green '✓') Pushed successfully."
+              echo
+              echo "$(dim "Commands run:")"
+              echo "$(dim "  git push origin $branch")"
+            else
+              echo "$(red 'Push failed.')"
+            fi
+            break ;;
+          q|Q|$'\x03'|$'\x1b')
+            stty "$OLD_STTY"
+            show_cursor
+            tput clear
+            break ;;
+        esac
+      done
+      exit 0
+    fi
+  fi
   exit 0
 fi
 
