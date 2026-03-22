@@ -36,7 +36,7 @@ rev_grn() { printf '\033[42;30m%s\033[0m' "$*"; }
 case "${1:-}" in
   --version|-V|-v)
     echo "git-stage 1.0.0"
-    echo "Copyright (c) 2026 Scott Bellware"
+    echo "Copyright (c) 2026 Scott Bellware. All rights reserved."
     exit 0 ;;
   --help|-h)
     echo "Usage: git-stage [options]"
@@ -58,7 +58,7 @@ case "${1:-}" in
     echo "  -q               Suppress copyright display"
     echo "  --dry-run        Show what would be staged/committed without doing it"
     echo ""
-    echo "Copyright (c) 2026 Scott Bellware"
+    echo "Copyright (c) 2026 Scott Bellware. All rights reserved."
     exit 0 ;;
   --dry-run) QUIET=0; DRY_RUN=1 ;;
   --dry-run\ -q|-q\ --dry-run) QUIET=1; DRY_RUN=1 ;;
@@ -277,7 +277,7 @@ draw() {
     out+="$(dim " previous commit: $last_commit")"$'\n'
   fi
   out+="$(dim " branch: $branch")"$'\n'
-  [[ "$QUIET" == "0" ]] && out+="$(dim ' Copyright (c) 2026 Scott Bellware')"$'\n'
+  [[ "$QUIET" == "0" ]] && out+="$(dim ' Copyright (c) 2026 Scott Bellware. All rights reserved.')"$'\n'
   out+="$(dim ' ↑↓ navigate   Space toggle   d diff   x remove   u revert   m amend   a all   Enter confirm   q quit')"$'\n'
   out+="$(dim ' ────────────────────────────────────────────────────────────')"$'\n'
 
