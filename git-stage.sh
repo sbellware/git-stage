@@ -99,6 +99,35 @@ N=${#PATHS[@]}
 cursor=0
 scroll=0
 
+# ── Collect diff stats (once, before the event loop) ────────────────────────
+declare -a STATS
+for (( i=0; i<N; i++ )); do
+  xy="${XY[$i]}"
+  path="${PATHS[$i]}"
+  x="${xy:0:1}"
+  stat=""
+  if [[ "$xy" == "??" ]]; then
+    # Untracked: count lines in the file as additions
+    lines=$(wc -l < "$path" 2>/dev/null | tr -d ' ') || lines=0
+    stat="$(printf '\033[32m+%s\033[0m' "$lines")"
+  elif [[ "$x" != " " ]]; then
+    # Staged: diff against HEAD
+    raw=$(git diff --cached --numstat -- "$path" 2>/dev/null)
+    added=$(awk '{print $1}' <<< "$raw")
+    removed=$(awk '{print $2}' <<< "$raw")
+    [[ -n "$added"   && "$added"   != "-" ]] && stat+="$(printf '\033[32m+%s\033[0m' "$added")"
+    [[ -n "$removed" && "$removed" != "-" ]] && stat+=" $(printf '\033[31m-%s\033[0m' "$removed")"
+  else
+    # Unstaged
+    raw=$(git diff --numstat -- "$path" 2>/dev/null)
+    added=$(awk '{print $1}' <<< "$raw")
+    removed=$(awk '{print $2}' <<< "$raw")
+    [[ -n "$added"   && "$added"   != "-" ]] && stat+="$(printf '\033[32m+%s\033[0m' "$added")"
+    [[ -n "$removed" && "$removed" != "-" ]] && stat+=" $(printf '\033[31m-%s\033[0m' "$removed")"
+  fi
+  STATS+=("$stat")
+done
+
 # ── Terminal setup ──────────────────────────────────────────────────────────
 
 hide_cursor()  { tput civis 2>/dev/null || true; }
@@ -196,10 +225,11 @@ draw() {
     local check="[ ] "
     [[ "${SEL[$fi]}" == "1" ]] && check="[✓] "
 
-    local lbl hint
+    local lbl hint stat
     lbl="$(status_label "$xy")"
     hint="$(staged_hint "$xy")"
-    local row="  ${check} ${path}  ${lbl}${hint}"
+    stat="${STATS[$fi]}"
+    local row="  ${check} ${path}  ${lbl}${hint}  ${stat}"
 
     if   [[ "${SEL[$fi]}" == "1" && $fi -eq $cursor ]]; then
       out+="$(rev_grn "$row")"$'\n'
