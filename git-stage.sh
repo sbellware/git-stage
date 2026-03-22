@@ -12,6 +12,9 @@
 #   u                Revert unstaged changes to file under cursor (with confirmation)
 #   q / Ctrl-C       Quit (index left exactly as-is)
 #
+# Options:
+#   -q               Suppress copyright display
+#
 # Already-staged files appear pre-checked.
 # Unchecking a staged file will unstage it on confirm.
 
@@ -50,8 +53,17 @@ case "${1:-}" in
     echo "  Enter            Confirm — stage selected, unstage deselected, then commit"
     echo "  q / Ctrl-C       Quit (index left exactly as-is)"
     echo ""
+    echo "Options:"
+    echo "  -q               Suppress copyright display"
+    echo ""
     echo "Copyright (c) 2026 Scott Bellware"
     exit 0 ;;
+  -q) QUIET=1 ;;
+  '') QUIET=0 ;;
+  *)
+    echo "Unknown option: ${1}" >&2
+    echo "Try 'git-stage --help' for usage." >&2
+    exit 1 ;;
 esac
 
 
@@ -164,7 +176,11 @@ draw() {
 
   local out=""
 
-  out+="$(bold ' git-stage')  $(dim "— $N file(s) changed, $sel_count selected")"$'\n'
+  local branch
+  branch=$(git branch --show-current 2>/dev/null || echo 'detached HEAD')
+
+  out+="$(bold ' git-stage')  $(dim "— $branch · $N file(s) changed, $sel_count selected")"$'\n'
+  [[ "$QUIET" == "0" ]] && out+="$(dim ' Copyright (c) 2026 Scott Bellware')"$'\n'
   out+="$(dim ' ↑↓ navigate   Space toggle   d diff   x remove   u revert   a all   Enter confirm   q quit')"$'\n'
   out+="$(dim ' ────────────────────────────────────────────────────────────')"$'\n'
 
