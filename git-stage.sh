@@ -516,8 +516,50 @@ if [[ "$DRY_RUN" == "1" ]]; then
   echo "$(yellow '[dry run] would commit:') $commit_msg"
 elif git commit -m "$commit_msg"; then
   CMDS+=("git commit -m \"$commit_msg\"")
-  echo
-  echo "$(green '✓') Committed successfully."
+
+  # ── Post-commit UI ───────────────────────────────────────────────────────────
+  stty -echo -icanon min 1 time 0
+  hide_cursor
+
+  cur_commit=$(git log -1 --pretty=format:'%s' 2>/dev/null || true)
+  cur_meta=$(git log -1 --pretty=format:'%an, %ad, %h' --date=format:'%a %b %d %H:%M:%S' 2>/dev/null || true)
+  branch=$(git branch --show-current 2>/dev/null || echo 'detached HEAD')
+
+  tput clear
+  printf '%s\n' \
+    "$(bold ' git-stage')  $(dim "— $branch · committed")" \
+    "$(dim " current commit: $cur_commit [$cur_meta]")" \
+    "$(dim ' p push   q quit')" \
+    "$(dim ' ────────────────────────────────────────────────────────────')"
+
+  while true; do
+    key=""
+    IFS= read -r -s -n1 key || true
+    if [[ "$key" == $'\x1b' ]]; then
+      seq=""
+      IFS= read -r -s -n2 -t 0.1 seq || true
+      key="${key}${seq}"
+    fi
+    case "$key" in
+      p|P)
+        stty "$OLD_STTY"
+        show_cursor
+        tput clear
+        echo "$(bold 'Pushing to origin...')"
+        if git push origin "$branch"; then
+          CMDS+=("git push origin $branch")
+          echo "$(green '✓') Pushed successfully."
+        else
+          echo "$(red 'Push failed.')"
+        fi
+        break ;;
+      q|Q|$'\x03'|$'\x1b')
+        stty "$OLD_STTY"
+        show_cursor
+        tput clear
+        break ;;
+    esac
+  done
 else
   echo
   echo "$(red 'Commit failed — files remain staged.')"
