@@ -18,6 +18,7 @@ Rather than juggling `git add` and `git status` at the command line, `git-stage`
 - Revert unstaged changes to a file
 - Remove untracked files
 - Amend the last commit — optionally adding more files and editing the message
+- Read-only status screen showing staged, unstaged, untracked, stashed, and unpushed changes
 - Push to origin after committing, or when the working tree is clean with unpushed commits
 - Dry run mode to preview what would be staged and committed
 - Prints the git commands run after each session
@@ -40,6 +41,7 @@ git-stage
 | `d` | View diff of file under cursor |
 | `x` | Remove untracked file (with confirmation) |
 | `u` | Revert unstaged changes to file under cursor (with confirmation) |
+| `s` | Show repository status screen |
 | `m` | Amend the last commit |
 | `a` | Select / deselect all |
 | `Enter` | Confirm — stage selected, unstage deselected, then prompt for commit message |
@@ -62,6 +64,20 @@ Press `d` on any file to open its diff in `less`:
 - **Untracked files** show the raw file contents
 
 Quit the diff with `q` to return to the file selector.
+
+### Status screen
+
+Press `s` to open a read-only overview of the repository state, or run `git-stage --status` / `git-stage -s` from the command line.
+
+The status screen displays:
+
+- **Staged** — files in the index, with per-file line change counts
+- **Unstaged** — files with worktree changes not yet staged, with line change counts
+- **Untracked** — new files not tracked by git, with total line counts shown as additions
+- **Stashes** — entries from `git stash list`, if any exist
+- **Unpushed** — commits on the local branch not yet pushed to the remote, if an upstream is configured
+
+Sections with no content are omitted. Press `q` or `Esc` to return to the file selector.
 
 ### Committing
 
