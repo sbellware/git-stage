@@ -13,7 +13,7 @@
 #   m                Amend the last commit (stages selected files, edits message)
 #
 # Options:
-#   -q               Suppress copyright display
+#   -q               Quiet mode. Suppress copyright notice and the output of Git commands executed.
 #
 # Already-staged files appear pre-checked.
 # Unchecking a staged file will unstage it on confirm.
@@ -58,7 +58,7 @@ case "${1:-}" in
     echo "  q / Ctrl-C       Quit (index left exactly as-is)"
     echo ""
     echo "Options:"
-    echo "  -q               Suppress copyright display"
+    echo "  -q               Quiet mode. Suppress copyright notice and the output of Git commands executed."
     echo "  --dry-run        Show what would be staged/committed without doing it"
     echo ""
     echo "Non-interactive (for scripting and testing):"
