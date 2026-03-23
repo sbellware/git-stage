@@ -4,19 +4,20 @@
 # git-stage — interactively select changed files to stage and commit.
 #
 # Controls:
-#   ↑ / ↓ / k / j   Navigate
-#   Space            Toggle selection
-#   d                Show diff of file under cursor
-#   a                Select / deselect all
-#   x                Remove untracked file under cursor (with confirmation)
-#   u                Revert unstaged changes to file under cursor (with confirmation)
-#   m                Amend the last commit (stages selected files, edits message)
+#   ↑ / ↓ / k / j  Navigate
+#   Space          Toggle selection
+#   d              Show diff of file under cursor
+#   a              Select / deselect all
+#   x              Remove untracked file under cursor (with confirmation)
+#   u              Revert unstaged changes to file under cursor (with confirmation)
+#   m              Amend the last commit (stages selected files, edits message)
 #
 # Options:
-#   -q, --quiet      Quiet mode. Suppress copyright notice and the output of Git commands executed.
-#   --dry-run        Show what would be staged/committed without doing it
-#   --version, -v    Show version and copyright
-#   --help, -h       Show usage and controls
+#   -q                  Quiet mode. Suppress the output of Git commands executed.
+#   -C, --no-copyright  Suppress the copyright notice in the UI
+#   --dry-run           Show what would be staged/committed without doing it
+#   --version, -v       Show version and copyright
+#   --help, -h          Show usage and controls
 #
 # Already-staged files appear pre-checked.
 # Unchecking a staged file will unstage it on confirm.
@@ -38,6 +39,7 @@ rev_grn() { printf '\033[42;30m%s\033[0m' "$*"; }
 # ── CLI flags ────────────────────────────────────────────────────────────────
 QUIET=0
 DRY_RUN=0
+SHOW_COPYRIGHT=1
 
 case "${1:-}" in
   --version|-V|-v)
@@ -50,7 +52,7 @@ case "${1:-}" in
     echo "Interactively select changed files to stage and commit."
     echo ""
     echo "Controls:"
-    echo "  ↑ / ↓ / k / j   Navigate"
+    echo "  ↑ / ↓ / k / j    Navigate"
     echo "  Space            Toggle selection"
     echo "  d                Show diff of file under cursor"
     echo "  x                Remove untracked file under cursor (with confirmation)"
@@ -61,22 +63,15 @@ case "${1:-}" in
     echo "  q / Ctrl-C       Quit (index left exactly as-is)"
     echo ""
     echo "Options:"
-    echo "  -q               Quiet mode. Suppress copyright notice and the output of Git commands executed."
-    echo "  --dry-run        Show what would be staged/committed without doing it"
-    echo ""
-    echo "Non-interactive (for scripting and testing):"
-    echo "  --stage <file>   Stage a specific file"
-    echo "  --unstage <file> Unstage a specific file"
-    echo "  --commit <msg>   Commit what is currently staged"
-    echo "  --amend <msg>    Amend the last commit with a new message"
-    echo "  --revert <file>  Revert unstaged changes to a file"
-    echo "  --delete <file>  Delete an untracked file"
-    echo "  --push           Push current branch to origin"
+    echo "  -q                  Quiet mode. Suppress the output of Git commands executed."
+    echo "  -C, --no-copyright  Suppress the copyright notice in the UI"
+    echo "  --dry-run           Show what would be staged/committed without doing it"
     echo ""
     echo "Copyright (c) 2026 Scott Bellware. All rights reserved."
     exit 0 ;;
-  --dry-run)  DRY_RUN=1 ;;
-  -q)         QUIET=1 ;;
+  --dry-run)          DRY_RUN=1 ;;
+  -q)                 QUIET=1 ;;
+  -C|--no-copyright)  SHOW_COPYRIGHT=0 ;;
 
   # ── Non-interactive switches ────────────────────────────────────────────────
   --stage)
@@ -371,7 +366,7 @@ draw() {
     out+="$(dim " previous commit: $last_commit")"$'\n'
   fi
   out+="$(dim " branch: $branch")"$'\n'
-  [[ "$QUIET" == "0" ]] && out+="$(dim ' Copyright (c) 2026 Scott Bellware. All rights reserved.')"$'\n'
+  [[ "$SHOW_COPYRIGHT" == "1" ]] && out+="$(dim ' Copyright (c) 2026 Scott Bellware. All rights reserved.')"$'\n'
   out+="$(dim ' ↑↓ navigate   Space toggle   d diff   x remove   u revert   m amend   a all   Enter confirm   q quit')"$'\n'
   out+="$(dim ' ────────────────────────────────────────────────────────────')"$'\n'
 

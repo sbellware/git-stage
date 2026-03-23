@@ -86,13 +86,12 @@ After each session, the git commands that were executed are printed, so you alwa
 ## CLI Flags
 
 ```sh
-git-stage --help      # Show usage and controls
-git-stage --version   # Show version and copyright
-git-stage -q          # Quiet mode. Suppress copyright notice and the output of Git commands executed.
-git-stage --dry-run   # Preview what would be staged and committed without doing it
+git-stage --help, -h          # Show usage and controls
+git-stage --version, -v       # Show version and copyright
+git-stage -q                  # Quiet mode. Suppress the output of Git commands executed.
+git-stage -C, --no-copyright  # Suppress the copyright notice in the UI
+git-stage --dry-run           # Show what would be staged/committed without doing it
 ```
-
-Short forms `-h` and `-v` are also supported for `--help` and `--version`.
 
 ## Requirements
 
