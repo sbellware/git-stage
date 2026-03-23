@@ -13,7 +13,10 @@
 #   m                Amend the last commit (stages selected files, edits message)
 #
 # Options:
-#   -q               Quiet mode. Suppress copyright notice and the output of Git commands executed.
+#   -q, --quiet      Quiet mode. Suppress copyright notice and the output of Git commands executed.
+#   --dry-run        Show what would be staged/committed without doing it
+#   --version, -v    Show version and copyright
+#   --help, -h       Show usage and controls
 #
 # Already-staged files appear pre-checked.
 # Unchecking a staged file will unstage it on confirm.
