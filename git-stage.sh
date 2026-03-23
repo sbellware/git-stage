@@ -4,20 +4,20 @@
 # git-stage — interactively select changed files to stage and commit.
 #
 # Controls:
-#   ↑ / ↓ / k / j  Navigate
-#   Space          Toggle selection
-#   d              Show diff of file under cursor
-#   a              Select / deselect all
-#   x              Remove untracked file under cursor (with confirmation)
-#   u              Revert unstaged changes to file under cursor (with confirmation)
-#   m              Amend the last commit (stages selected files, edits message)
+#   ↑ / ↓ / k / j   Navigate
+#   Space            Toggle selection
+#   d                Show diff of file under cursor
+#   a                Select / deselect all
+#   x                Remove untracked file under cursor (with confirmation)
+#   u                Revert unstaged changes to file under cursor (with confirmation)
+#   m                Amend the last commit (stages selected files, edits message)
 #
 # Options:
-#   -q                  Quiet mode. Suppress the output of Git commands executed.
+#   -q               Quiet mode. Suppress the output of Git commands executed.
 #   -C, --no-copyright  Suppress the copyright notice in the UI
-#   --dry-run           Show what would be staged/committed without doing it
-#   --version, -v       Show version and copyright
-#   --help, -h          Show usage and controls
+#   --dry-run        Show what would be staged/committed without doing it
+#   --version, -v    Show version and copyright
+#   --help, -h       Show usage and controls
 #
 # Already-staged files appear pre-checked.
 # Unchecking a staged file will unstage it on confirm.
@@ -41,6 +41,9 @@ QUIET=0
 DRY_RUN=0
 SHOW_COPYRIGHT=1
 
+# Honour environment variable
+[[ -n "${GIT_STAGE_NO_COPYRIGHT:-}" ]] && SHOW_COPYRIGHT=0
+
 case "${1:-}" in
   --version|-V|-v)
     echo "git-stage 1.0.0"
@@ -52,7 +55,7 @@ case "${1:-}" in
     echo "Interactively select changed files to stage and commit."
     echo ""
     echo "Controls:"
-    echo "  ↑ / ↓ / k / j    Navigate"
+    echo "  ↑ / ↓ / k / j   Navigate"
     echo "  Space            Toggle selection"
     echo "  d                Show diff of file under cursor"
     echo "  x                Remove untracked file under cursor (with confirmation)"
@@ -63,9 +66,18 @@ case "${1:-}" in
     echo "  q / Ctrl-C       Quit (index left exactly as-is)"
     echo ""
     echo "Options:"
-    echo "  -q                  Quiet mode. Suppress the output of Git commands executed."
+    echo "  -q               Quiet mode. Suppress the output of Git commands executed."
     echo "  -C, --no-copyright  Suppress the copyright notice in the UI"
-    echo "  --dry-run           Show what would be staged/committed without doing it"
+    echo "  --dry-run        Show what would be staged/committed without doing it"
+    echo ""
+    echo "Non-interactive (for scripting and testing):"
+    echo "  --stage <file>   Stage a specific file"
+    echo "  --unstage <file> Unstage a specific file"
+    echo "  --commit <msg>   Commit what is currently staged"
+    echo "  --amend <msg>    Amend the last commit with a new message"
+    echo "  --revert <file>  Revert unstaged changes to a file"
+    echo "  --delete <file>  Delete an untracked file"
+    echo "  --push           Push current branch to origin"
     echo ""
     echo "Copyright (c) 2026 Scott Bellware. All rights reserved."
     exit 0 ;;
