@@ -18,7 +18,7 @@ Rather than juggling `git add` and `git status` at the command line, `git-stage`
 - Revert unstaged changes to a file
 - Remove untracked files
 - Amend the last commit — optionally adding more files and editing the message
-- Read-only status screen showing staged, unstaged, untracked, stashed, and unpushed changes
+- Status screen showing staged, unstaged, untracked, stashed, and unpushed changes
 - Push to origin after committing, or when the working tree is clean with unpushed commits
 - Dry run mode to preview what would be staged and committed
 - Prints the git commands run after each session
@@ -67,7 +67,7 @@ Quit the diff with `q` to return to the file selector.
 
 ### Status screen
 
-Press `s` to open a read-only overview of the repository state, or run `git-stage --status` / `git-stage -s` from the command line.
+Press `s` to open an overview of the repository state, or run `git-stage --status` / `git-stage -s` from the command line. The status screen isn't interactive. It displays the information, but doesn't trigger any actions.
 
 The status screen displays:
 
