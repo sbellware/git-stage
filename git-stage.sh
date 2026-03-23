@@ -224,7 +224,7 @@ if [[ ${#STATUS_LINES[@]} -eq 0 ]]; then
             stty "$OLD_STTY" </dev/tty
             show_cursor
             tput clear
-            echo "$(bold 'Pushing to origin...')"
+            echo "$(bold "Pushing to origin:$branch...")"
             if git push --set-upstream origin "$branch"; then
               echo "$(green '✓') Pushed successfully."
               if [[ "$QUIET" == "0" ]]; then
@@ -698,7 +698,7 @@ elif git commit -m "$commit_msg"; then
         stty "$OLD_STTY" </dev/tty
         show_cursor
         tput clear
-        echo "$(bold 'Pushing to origin...')"
+        echo "$(bold "Pushing to origin:$branch...")"
         if git push --set-upstream origin "$branch"; then
           CMDS+=("git push --set-upstream origin $branch")
           echo "$(green '✓') Pushed successfully."
