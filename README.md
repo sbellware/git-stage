@@ -1,6 +1,6 @@
 # git-stage
 
-![git-stage screenshot](screenshot.png)
+![git-stage demo](git-stage-demo.gif)
 
 *All the world's a stage, and all the untracked files are unfinished business.*
 
