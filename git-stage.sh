@@ -227,9 +227,11 @@ if [[ ${#STATUS_LINES[@]} -eq 0 ]]; then
             echo "$(bold 'Pushing to origin...')"
             if git push --set-upstream origin "$branch"; then
               echo "$(green '✓') Pushed successfully."
-              echo
-              echo "$(dim "Commands run:")"
-              echo "$(dim "  git push --set-upstream origin $branch")"
+              if [[ "$QUIET" == "0" ]]; then
+                echo
+                echo "$(dim "Commands run:")"
+                echo "$(dim "  git push --set-upstream origin $branch")"
+              fi
             else
               echo "$(red 'Push failed.')"
             fi
@@ -718,7 +720,7 @@ else
 fi
 
 # ── Commands run ──────────────────────────────────────────────────────────────
-if [[ ${#CMDS[@]} -gt 0 ]]; then
+if [[ ${#CMDS[@]} -gt 0 && "$QUIET" == "0" ]]; then
   echo
   echo "$(dim 'Commands run:')"
   for cmd in "${CMDS[@]}"; do echo "$(dim "  $cmd")"; done
