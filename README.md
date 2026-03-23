@@ -1,8 +1,8 @@
 # git-stage
 
-![git-stage demo](git-stage-demo.gif)
-
 *All the world's a stage, and all the untracked files are unfinished business.*
+
+![git-stage demo](git-stage-demo.gif)
 
 An interactive terminal tool for staging files and committing with Git.
 
