@@ -10,7 +10,7 @@
 #   a                Select / deselect all
 #   x                Remove untracked file under cursor (with confirmation)
 #   u                Revert unstaged changes to file under cursor (with confirmation)
-#   m                Amend the last commit (stages selected files, edits message)
+#   s                Show repository status screen
 #
 # Options:
 #   -q               Quiet mode. Suppress the output of Git commands executed.
@@ -36,6 +36,113 @@ red()     { printf '\033[31m%s\033[0m'    "$*"; }
 reverse() { printf '\033[7m%s\033[27m'    "$*"; }
 rev_grn() { printf '\033[42;30m%s\033[0m' "$*"; }
 
+# ── Status screen ────────────────────────────────────────────────────────────
+show_status() {
+  local branch last_commit last_meta
+  branch=$(git branch --show-current 2>/dev/null || echo 'detached HEAD')
+  last_commit=$(git log -1 --pretty=format:'%s' 2>/dev/null || echo 'no commits yet')
+  last_meta=$(git log -1 --pretty=format:'%an, %ad, %h' --date=format:'%a %b %d %H:%M:%S' 2>/dev/null || echo '')
+
+  local out=""
+  out+="$(bold ' git-stage')  $(dim "— $branch")"$'\n'
+  if [[ -n "$last_meta" ]]; then
+    out+="$(dim " previous commit: $last_commit [$last_meta]")"$'\n'
+  else
+    out+="$(dim " previous commit: $last_commit")"$'\n'
+  fi
+  out+="$(dim ' ────────────────────────────────────────────────────────────')"$'\n'
+
+  # Collect files by category
+  local staged=() unstaged=() untracked=()
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    local xy="${line:0:2}" path="${line:3}"
+    local x="${xy:0:1}" y="${xy:1:1}"
+    if [[ "$xy" == "??" ]]; then
+      untracked+=("$path")
+    elif [[ "$x" != " " && "$y" != " " && "$y" != "?" ]]; then
+      staged+=("$xy $path")
+      unstaged+=("$xy $path")
+    elif [[ "$x" != " " ]]; then
+      staged+=("$xy $path")
+    else
+      unstaged+=("$xy $path")
+    fi
+  done < <(git status --porcelain -u 2>/dev/null)
+
+  # Staged
+  if [[ ${#staged[@]} -gt 0 ]]; then
+    out+="$(bold ' Staged')"$'\n'
+    for entry in "${staged[@]}"; do
+      local xy="${entry:0:2}" path="${entry:3}"
+      local raw added removed stat=""
+      raw=$(git diff --cached --numstat -- "$path" 2>/dev/null)
+      added=$(awk '{print $1}' <<< "$raw")
+      removed=$(awk '{print $2}' <<< "$raw")
+      [[ -n "$added"   && "$added"   != "-" ]] && stat+="$(printf '\033[32m+%s\033[0m' "$added")"
+      [[ -n "$removed" && "$removed" != "-" ]] && stat+=" $(printf '\033[31m-%s\033[0m' "$removed")"
+      out+="$(green "   $xy $path")  $stat"$'\n'
+    done
+    out+=$'\n'
+  fi
+
+  # Unstaged
+  if [[ ${#unstaged[@]} -gt 0 ]]; then
+    out+="$(bold ' Unstaged')"$'\n'
+    for entry in "${unstaged[@]}"; do
+      local xy="${entry:0:2}" path="${entry:3}"
+      local raw added removed stat=""
+      raw=$(git diff --numstat -- "$path" 2>/dev/null)
+      added=$(awk '{print $1}' <<< "$raw")
+      removed=$(awk '{print $2}' <<< "$raw")
+      [[ -n "$added"   && "$added"   != "-" ]] && stat+="$(printf '\033[32m+%s\033[0m' "$added")"
+      [[ -n "$removed" && "$removed" != "-" ]] && stat+=" $(printf '\033[31m-%s\033[0m' "$removed")"
+      out+="$(yellow "   $xy $path")  $stat"$'\n'
+    done
+    out+=$'\n'
+  fi
+
+  # Untracked
+  if [[ ${#untracked[@]} -gt 0 ]]; then
+    out+="$(bold ' Untracked')"$'\n'
+    for path in "${untracked[@]}"; do
+      local lines
+      lines=$(wc -l < "$path" 2>/dev/null | tr -d ' ') || lines=0
+      out+="$(cyan "   ?? $path")  $(printf '\033[32m+%s\033[0m' "$lines")"$'\n'
+    done
+    out+=$'\n'
+  fi
+
+  # Stashes
+  local stash_log
+  stash_log=$(git stash list 2>/dev/null)
+  if [[ -n "$stash_log" ]]; then
+    out+="$(bold ' Stashes')"$'\n'
+    while IFS= read -r line; do
+      out+="$(dim "   $line")"$'\n'
+    done <<< "$stash_log"
+    out+=$'\n'
+  fi
+
+  # Unpushed commits
+  local upstream
+  upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)
+  if [[ -n "$upstream" ]]; then
+    local unpushed_log
+    unpushed_log=$(git log '@{u}..HEAD' --pretty=format:'%h %s' 2>/dev/null)
+    if [[ -n "$unpushed_log" ]]; then
+      out+="$(bold ' Unpushed')"$'\n'
+      while IFS= read -r line; do
+        out+="$(dim "   $line")"$'\n'
+      done <<< "$unpushed_log"
+      out+=$'\n'
+    fi
+  fi
+
+  out+="$(dim ' ────────────────────────────────────────────────────────────')"$'\n'
+  printf '%s' "$out"
+}
+
 # ── CLI flags ────────────────────────────────────────────────────────────────
 QUIET=0
 DRY_RUN=0
@@ -60,6 +167,7 @@ case "${1:-}" in
     echo "  d                Show diff of file under cursor"
     echo "  x                Remove untracked file under cursor (with confirmation)"
     echo "  u                Revert unstaged changes to file under cursor (with confirmation)"
+    echo "  s                Show repository status screen"
     echo "  m                Amend the last commit (stages selected files, edits message)"
     echo "  a                Select / deselect all"
     echo "  Enter            Confirm — stage selected, unstage deselected, then commit"
@@ -68,7 +176,7 @@ case "${1:-}" in
     echo "Options:"
     echo "  -q               Quiet mode. Suppress the output of Git commands executed."
     echo "  -C, --no-copyright  Suppress the copyright notice in the UI"
-    echo "  --dry-run        Show what would be staged/committed without doing it"
+    echo "  --status, -s     Show repository status screen and exit"
     echo ""
     echo "Non-interactive (for scripting and testing):"
     echo "  --stage <file>   Stage a specific file"
@@ -81,6 +189,13 @@ case "${1:-}" in
     echo ""
     echo "Copyright (c) 2026 Scott Bellware. All rights reserved."
     exit 0 ;;
+  --status|-s)
+    if ! git rev-parse --is-inside-work-tree &>/dev/null; then
+      echo "Error: not inside a git repository." >&2; exit 1
+    fi
+    show_status
+    exit 0 ;;
+
   --dry-run)          DRY_RUN=1 ;;
   -q)                 QUIET=1 ;;
   -C|--no-copyright)  SHOW_COPYRIGHT=0 ;;
@@ -379,7 +494,7 @@ draw() {
   fi
   out+="$(dim " branch: $branch")"$'\n'
   [[ "$SHOW_COPYRIGHT" == "1" ]] && out+="$(dim ' Copyright (c) 2026 Scott Bellware. All rights reserved.')"$'\n'
-  out+="$(dim ' ↑↓ navigate   Space toggle   d diff   x remove   u revert   m amend   a all   Enter confirm   q quit')"$'\n'
+  out+="$(dim ' ↑↓ navigate   Space toggle   d diff   s status   x remove   u revert   m amend   a all   Enter confirm   q quit')"$'\n'
   out+="$(dim ' ────────────────────────────────────────────────────────────')"$'\n'
 
   local i
@@ -444,6 +559,26 @@ while true; do
     ' ')
       if [[ "${SEL[$cursor]}" == "1" ]]; then SEL[$cursor]=0
       else SEL[$cursor]=1; fi
+      ;;
+    s|S)
+      stty "$OLD_STTY" </dev/tty
+      show_cursor
+      tput clear
+      show_status
+      printf "$(dim 'q / Esc — return')"
+      while true; do
+        key=""
+        IFS= read -r -s -n1 key </dev/tty || true
+        if [[ "$key" == $'\x1b' ]]; then
+          seq=""
+          IFS= read -r -s -n2 -t 0.1 seq </dev/tty || true
+          key="${key}${seq}"
+        fi
+        [[ "$key" == q || "$key" == Q || "$key" == $'\x1b' || "$key" == $'\x03' ]] && break
+      done
+      tput clear
+      stty -echo -icanon min 1 time 0 </dev/tty
+      hide_cursor
       ;;
     a|A)
       sel_count=$(count_selected)
