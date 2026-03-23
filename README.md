@@ -1,8 +1,8 @@
 # git-stage
 
-![git-stage demo](git-stage-demo.gif)
+![git-stage screenshot](screenshot.png)
 
-*All the world's a stage, and all the git contributors*
+*All the world's a stage, and all the untracked files are unfinished business.*
 
 An interactive terminal tool for staging files and committing with Git.
 
@@ -21,6 +21,34 @@ Rather than juggling `git add` and `git status` at the command line, `git-stage`
 - Push to origin after committing, or when the working tree is clean with unpushed commits
 - Dry run mode to preview what would be staged and committed
 - Prints the git commands run after each session
+
+## Requirements
+
+- Bash 4.0+
+- Git
+- Standard Unix utilities: `tput`, `stty`, `less`
+
+macOS ships with Bash 3.2. Install a current version via Homebrew:
+
+```sh
+brew install bash
+```
+
+## Installation
+
+Download the script and place it somewhere on your `$PATH`:
+
+```sh
+curl -o ~/.local/bin/git-stage https://raw.githubusercontent.com/sbellware/git-stage/main/git-stage.sh
+chmod +x ~/.local/bin/git-stage
+```
+
+Or clone the repository and symlink it:
+
+```sh
+git clone https://github.com/sbellware/git-stage.git
+ln -s "$PWD/git-stage/git-stage.sh" ~/.local/bin/git-stage
+```
 
 ## Usage
 
@@ -93,34 +121,6 @@ git-stage --dry-run   # Preview what would be staged and committed without doing
 ```
 
 Short forms `-h` and `-v` are also supported for `--help` and `--version`.
-
-## Requirements
-
-- Bash 4.0+
-- Git
-- Standard Unix utilities: `tput`, `stty`, `less`
-
-macOS ships with Bash 3.2. Install a current version via Homebrew:
-
-```sh
-brew install bash
-```
-
-## Installation
-
-Download the script and place it somewhere on your `$PATH`:
-
-```sh
-curl -o ~/.local/bin/git-stage https://raw.githubusercontent.com/sbellware/git-stage/main/git-stage.sh
-chmod +x ~/.local/bin/git-stage
-```
-
-Or clone the repository and symlink it:
-
-```sh
-git clone https://github.com/sbellware/git-stage.git
-ln -s "$PWD/git-stage/git-stage.sh" ~/.local/bin/git-stage
-```
 
 ## License
 
