@@ -13,12 +13,12 @@
 #   s                Show repository status screen
 #
 # Options:
-#   -q               Quiet mode. Suppress the output of Git commands executed.
-#   -C, --no-copyright  Suppress the copyright notice in the UI
+#   -q                    Quiet mode. Suppress the output of Git commands executed.
+#   -C, --no-copyright    Suppress the copyright notice in the UI
 #   -U, --unsafe-confirm  Confirm dangerous actions with Enter instead of 'y'
-#   --dry-run        Show what would be staged/committed without doing it
-#   --version, -v    Show version and copyright
-#   --help, -h       Show usage and controls
+#   --dry-run             Show what would be staged/committed without doing it
+#   --version, -v         Show version and copyright
+#   --help, -h            Show usage and controls
 #
 # Already-staged files appear pre-checked.
 # Unchecking a staged file will unstage it on confirm.
