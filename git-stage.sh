@@ -44,7 +44,7 @@ show_status() {
   last_meta=$(git log -1 --pretty=format:'%an, %ad, %h' --date=format:'%a %b %d %H:%M:%S' 2>/dev/null || echo '')
 
   local out=""
-  out+="$(bold 'git-stage')  — $(green "$branch")"$'\n'
+  out+="$(bold 'git-stage') — $(green "$branch")"$'\n'
   if [[ -n "$last_meta" ]]; then
     out+="$(dim " previous commit: $last_commit [$last_meta]")"$'\n'
   else
@@ -343,7 +343,7 @@ if [[ ${#STATUS_LINES[@]} -eq 0 ]]; then
       tput clear
 
       printf '%s\n' \
-        "$(bold 'git-stage')  — $(green "$branch") · $(dim "$unpushed unpushed commit(s)")" \
+        "$(bold 'git-stage') — $(green "$branch") · $(dim "$unpushed unpushed commit(s)")" \
         "$(dim " current commit: $cur_commit [$cur_meta]")" \
         "$(dim ' p push   q quit')" \
         "$(dim ' ────────────────────────────────────────────────────────────')"
@@ -496,7 +496,7 @@ draw() {
   last_commit=$(git log -1 --pretty=format:'%s' 2>/dev/null || echo 'no commits yet')
   last_meta=$(git log -1 --pretty=format:'%an, %ad, %h' --date=format:'%a %b %d %H:%M:%S' 2>/dev/null || echo '')
 
-  out+="$(bold 'git-stage')  — $(green "$branch") · $(dim "$N file(s) changed, $sel_count selected")"
+  out+="$(bold 'git-stage') — $(green "$branch") · $(dim "$N file(s) changed, $sel_count selected")"
   [[ "$DRY_RUN" == "1" ]] && out+="  $(yellow '[dry run]')"
   out+=$'\n'
   if [[ -n "$last_meta" ]]; then
@@ -837,7 +837,7 @@ elif git commit -m "$commit_msg"; then
 
   tput clear
   printf '%s\n' \
-    "$(bold 'git-stage')  — $(green "$branch") · $(dim 'committed')" \
+    "$(bold 'git-stage') — $(green "$branch") · $(dim 'committed')" \
     "$(dim " current commit: $cur_commit [$cur_meta]")" \
     "$(dim ' p push   q quit')" \
     "$(dim ' ────────────────────────────────────────────────────────────')"
