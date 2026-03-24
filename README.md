@@ -107,6 +107,7 @@ git-stage --version, -v       # Show version and copyright
 git-stage --status, -s        # Show repository status screen and exit
 git-stage -q                  # Quiet mode. Suppress the output of Git commands executed.
 git-stage -C, --no-copyright  # Suppress the copyright notice in the UI
+git-stage -U, --unsafe-confirm  # Confirm dangerous actions with Enter instead of 'y'
 git-stage --dry-run           # Show what would be staged/committed without doing it
 ```
 

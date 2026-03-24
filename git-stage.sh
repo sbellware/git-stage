@@ -15,6 +15,7 @@
 # Options:
 #   -q               Quiet mode. Suppress the output of Git commands executed.
 #   -C, --no-copyright  Suppress the copyright notice in the UI
+#   -U, --unsafe-confirm  Confirm dangerous actions with Enter instead of 'y'
 #   --dry-run        Show what would be staged/committed without doing it
 #   --version, -v    Show version and copyright
 #   --help, -h       Show usage and controls
@@ -159,9 +160,11 @@ show_status() {
 QUIET=0
 DRY_RUN=0
 SHOW_COPYRIGHT=1
+UNSAFE_CONFIRM=0
 
 # Honour environment variable
 [[ -n "${GIT_STAGE_NO_COPYRIGHT:-}" ]] && SHOW_COPYRIGHT=0
+[[ -n "${GIT_STAGE_UNSAFE_CONFIRM:-}" ]] && UNSAFE_CONFIRM=1
 
 case "${1:-}" in
   --version|-V|-v)
@@ -188,6 +191,7 @@ case "${1:-}" in
     echo "Options:"
     echo "  -q               Quiet mode. Suppress the output of Git commands executed."
     echo "  -C, --no-copyright  Suppress the copyright notice in the UI"
+    echo "  -U, --unsafe-confirm  Confirm dangerous actions with Enter instead of 'y'"
     echo "  --status, -s     Show repository status screen and exit"
     echo ""
     echo "Non-interactive (for scripting and testing):"
@@ -208,9 +212,10 @@ case "${1:-}" in
     show_status
     exit 0 ;;
 
-  --dry-run)          DRY_RUN=1 ;;
-  -q)                 QUIET=1 ;;
-  -C|--no-copyright)  SHOW_COPYRIGHT=0 ;;
+  --dry-run)            DRY_RUN=1 ;;
+  -q)                   QUIET=1 ;;
+  -C|--no-copyright)    SHOW_COPYRIGHT=0 ;;
+  -U|--unsafe-confirm)  UNSAFE_CONFIRM=1 ;;
 
   # ── Non-interactive switches ────────────────────────────────────────────────
   --stage)
@@ -626,8 +631,15 @@ while true; do
         stty "$OLD_STTY" </dev/tty
         show_cursor
         clear_drawn
-        printf "Remove $(red "$path")? [y/N] "
-        IFS= read -r confirm </dev/tty
+        if [[ "$UNSAFE_CONFIRM" == "1" ]]; then
+          printf "Remove $(red "$path")? [Enter/Esc] "
+          IFS= read -r -s -n1 confirm </dev/tty
+          echo
+          [[ "$confirm" == "" || "$confirm" == $'\r' || "$confirm" == $'\n' ]] && confirm="y" || confirm="n"
+        else
+          printf "Remove $(red "$path")? [y/N] "
+          IFS= read -r confirm </dev/tty
+        fi
         if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
           rm -rf -- "$path"
           # Remove from arrays
@@ -654,8 +666,15 @@ while true; do
         stty "$OLD_STTY" </dev/tty
         show_cursor
         clear_drawn
-        printf "Revert $(yellow "$path")? This cannot be undone. [y/N] "
-        IFS= read -r confirm </dev/tty
+        if [[ "$UNSAFE_CONFIRM" == "1" ]]; then
+          printf "Revert $(yellow "$path")? This cannot be undone. [Enter/Esc] "
+          IFS= read -r -s -n1 confirm </dev/tty
+          echo
+          [[ "$confirm" == "" || "$confirm" == $'\r' || "$confirm" == $'\n' ]] && confirm="y" || confirm="n"
+        else
+          printf "Revert $(yellow "$path")? This cannot be undone. [y/N] "
+          IFS= read -r confirm </dev/tty
+        fi
         if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
           git restore -- "$path"
           # Remove from arrays
