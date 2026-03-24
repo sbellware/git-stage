@@ -50,7 +50,6 @@ show_status() {
   else
     out+="$(dim " previous commit: $last_commit")"$'\n'
   fi
-  out+="$(dim ' ────────────────────────────────────────────────────────────')"$'\n'
 
   # Collect files by category
   local staged=() unstaged=() untracked=()
@@ -70,9 +69,14 @@ show_status() {
     fi
   done < <(git status --porcelain -u 2>/dev/null)
 
+  local has_sections=0
+
   # Staged
+  local sections_out=""
+
   if [[ ${#staged[@]} -gt 0 ]]; then
-    out+="$(bold ' Staged')"$'\n'
+    has_sections=1
+    sections_out+="$(bold ' Staged')"$'\n'
     for entry in "${staged[@]}"; do
       local xy="${entry:0:2}" path="${entry:3}"
       local raw added removed stat=""
@@ -81,14 +85,15 @@ show_status() {
       removed=$(awk '{print $2}' <<< "$raw")
       [[ -n "$added"   && "$added"   != "-" ]] && stat+="$(printf '\033[32m+%s\033[0m' "$added")"
       [[ -n "$removed" && "$removed" != "-" ]] && stat+=" $(printf '\033[31m-%s\033[0m' "$removed")"
-      out+="$(green "   $xy $path")  $stat"$'\n'
+      sections_out+="$(green "   $xy $path")  $stat"$'\n'
     done
-    out+=$'\n'
+    sections_out+=$'\n'
   fi
 
   # Unstaged
   if [[ ${#unstaged[@]} -gt 0 ]]; then
-    out+="$(bold ' Unstaged')"$'\n'
+    has_sections=1
+    sections_out+="$(bold ' Unstaged')"$'\n'
     for entry in "${unstaged[@]}"; do
       local xy="${entry:0:2}" path="${entry:3}"
       local raw added removed stat=""
@@ -97,31 +102,33 @@ show_status() {
       removed=$(awk '{print $2}' <<< "$raw")
       [[ -n "$added"   && "$added"   != "-" ]] && stat+="$(printf '\033[32m+%s\033[0m' "$added")"
       [[ -n "$removed" && "$removed" != "-" ]] && stat+=" $(printf '\033[31m-%s\033[0m' "$removed")"
-      out+="$(yellow "   $xy $path")  $stat"$'\n'
+      sections_out+="$(yellow "   $xy $path")  $stat"$'\n'
     done
-    out+=$'\n'
+    sections_out+=$'\n'
   fi
 
   # Untracked
   if [[ ${#untracked[@]} -gt 0 ]]; then
-    out+="$(bold ' Untracked')"$'\n'
+    has_sections=1
+    sections_out+="$(bold ' Untracked')"$'\n'
     for path in "${untracked[@]}"; do
       local lines
       lines=$(wc -l < "$path" 2>/dev/null | tr -d ' ') || lines=0
-      out+="$(cyan "   ?? $path")  $(printf '\033[32m+%s\033[0m' "$lines")"$'\n'
+      sections_out+="$(cyan "   ?? $path")  $(printf '\033[32m+%s\033[0m' "$lines")"$'\n'
     done
-    out+=$'\n'
+    sections_out+=$'\n'
   fi
 
   # Stashes
   local stash_log
   stash_log=$(git stash list 2>/dev/null)
   if [[ -n "$stash_log" ]]; then
-    out+="$(bold ' Stashes')"$'\n'
+    has_sections=1
+    sections_out+="$(bold ' Stashes')"$'\n'
     while IFS= read -r line; do
-      out+="$(dim "   $line")"$'\n'
+      sections_out+="$(dim "   $line")"$'\n'
     done <<< "$stash_log"
-    out+=$'\n'
+    sections_out+=$'\n'
   fi
 
   # Unpushed commits
@@ -131,15 +138,20 @@ show_status() {
     local unpushed_log
     unpushed_log=$(git log '@{u}..HEAD' --pretty=format:'%h %s' 2>/dev/null)
     if [[ -n "$unpushed_log" ]]; then
-      out+="$(bold ' Unpushed')"$'\n'
+      has_sections=1
+      sections_out+="$(bold ' Unpushed')"$'\n'
       while IFS= read -r line; do
-        out+="$(dim "   $line")"$'\n'
+        sections_out+="$(dim "   $line")"$'\n'
       done <<< "$unpushed_log"
-      out+=$'\n'
+      sections_out+=$'\n'
     fi
   fi
 
-  out+="$(dim ' ────────────────────────────────────────────────────────────')"$'\n'
+  if [[ $has_sections -eq 1 ]]; then
+    out+="$(dim ' ────────────────────────────────────────────────────────────')"$'\n'
+    out+="$sections_out"
+    out+="$(dim ' ────────────────────────────────────────────────────────────')"$'\n'
+  fi
   printf '%s' "$out"
 }
 
