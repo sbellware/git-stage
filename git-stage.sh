@@ -167,6 +167,7 @@ SELECT_ALL=0
 # Honour environment variable
 [[ -n "${GIT_STAGE_NO_COPYRIGHT:-}" ]] && SHOW_COPYRIGHT=0
 [[ -n "${GIT_STAGE_UNSAFE_CONFIRM:-}" ]] && UNSAFE_CONFIRM=1
+[[ -n "${GIT_STAGE_SELECT_ALL:-}" ]] && SELECT_ALL=1
 
 case "${1:-}" in
   --version|-V|-v)
