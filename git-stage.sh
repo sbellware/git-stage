@@ -13,12 +13,13 @@
 #   s                Show repository status screen
 #
 # Options:
-#   -q                    Quiet mode. Suppress the output of Git commands executed.
-#   -C, --no-copyright    Suppress the copyright notice in the UI
+#   -q               Quiet mode. Suppress the output of Git commands executed.
+#   -C, --no-copyright  Suppress the copyright notice in the UI
 #   -U, --unsafe-confirm  Confirm dangerous actions with Enter instead of 'y'
-#   --dry-run             Show what would be staged/committed without doing it
-#   --version, -v         Show version and copyright
-#   --help, -h            Show usage and controls
+#   -A, --select-all  Start with all files pre-selected
+#   --dry-run        Show what would be staged/committed without doing it
+#   --version, -v    Show version and copyright
+#   --help, -h       Show usage and controls
 #
 # Already-staged files appear pre-checked.
 # Unchecking a staged file will unstage it on confirm.
@@ -161,6 +162,7 @@ QUIET=0
 DRY_RUN=0
 SHOW_COPYRIGHT=1
 UNSAFE_CONFIRM=0
+SELECT_ALL=0
 
 # Honour environment variable
 [[ -n "${GIT_STAGE_NO_COPYRIGHT:-}" ]] && SHOW_COPYRIGHT=0
@@ -192,6 +194,7 @@ case "${1:-}" in
     echo "  -q               Quiet mode. Suppress the output of Git commands executed."
     echo "  -C, --no-copyright  Suppress the copyright notice in the UI"
     echo "  -U, --unsafe-confirm  Confirm dangerous actions with Enter instead of 'y'"
+    echo "  -A, --select-all  Start with all files pre-selected"
     echo "  --status, -s     Show repository status screen and exit"
     echo ""
     echo "Non-interactive (for scripting and testing):"
@@ -216,6 +219,7 @@ case "${1:-}" in
   -q)                   QUIET=1 ;;
   -C|--no-copyright)    SHOW_COPYRIGHT=0 ;;
   -U|--unsafe-confirm)  UNSAFE_CONFIRM=1 ;;
+  -A|--select-all)      SELECT_ALL=1 ;;
 
   # ── Non-interactive switches ────────────────────────────────────────────────
   --stage)
@@ -410,6 +414,11 @@ done
 N=${#PATHS[@]}
 cursor=0
 scroll=0
+
+# Pre-select all files if --select-all was given
+if [[ "$SELECT_ALL" == "1" ]]; then
+  for (( i=0; i<N; i++ )); do SEL[$i]=1; done
+fi
 
 # ── Collect diff stats (once, before the event loop) ────────────────────────
 declare -a STATS
