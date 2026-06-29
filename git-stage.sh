@@ -734,12 +734,9 @@ while true; do
         echo
       fi
       prev_msg=$(git log -1 --pretty=format:'%B' 2>/dev/null || echo '')
-      printf "$(bold 'Amend commit message') $(dim '(blank to abort):')\n  › "
-      # Print the previous message so the user can see it, then read a new one
-      printf '%s' "$prev_msg"
-      echo
-      printf "  › "
-      IFS= read -r commit_msg </dev/tty
+      printf "$(bold 'Amend commit message') $(dim '(blank to abort):')\n"
+      # -e/-i pre-fill the previous message as editable text; arrow keys move the cursor
+      IFS= read -r -e -i "$prev_msg" -p "  › " commit_msg </dev/tty
       [[ -z "$commit_msg" ]] && commit_msg="$prev_msg"
 
       if [[ -z "$commit_msg" ]]; then
@@ -841,8 +838,9 @@ if [[ ${#TO_STAGE[@]} -eq 0 && $(( ${#UNSTAGE_NEW[@]} + ${#UNSTAGE_TRACKED[@]} )
 fi
 
 # ── Commit message ────────────────────────────────────────────────────────────
-printf "$(bold 'Commit message') $(dim '(blank to abort):')\n  › "
-IFS= read -r commit_msg </dev/tty
+# -e routes input through readline so arrow keys move the cursor (and history works)
+printf "$(bold 'Commit message') $(dim '(blank to abort):')\n"
+IFS= read -r -e -p "  › " commit_msg </dev/tty
 
 if [[ -z "$commit_msg" ]]; then
   echo "$(yellow 'No message given — files are staged but not committed.')"
